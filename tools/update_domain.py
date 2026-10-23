@@ -42,9 +42,15 @@ def main():
     if candidate == primary:
         print("Domain unchanged")
         return
-    latest = get_json(candidate + "/api/latest")
-    if not latest.get("success"):
-        raise ValueError("New domain is not serving Elevate data")
+    try:
+        latest = get_json(candidate + "/api/latest")
+        if not latest.get("success"):
+            raise ValueError("New domain is not serving Elevate data")
+    except Exception as exc:
+        if os.environ.get("NEW_DOMAIN", "").strip():
+            raise ValueError("New domain is not serving Elevate data") from exc
+        print("Reported domain is not ready; keeping", primary)
+        return
     previous = [primary] + [normalize(item) for item in current.get("fallbacks", [])]
     next_manifest = {
         "schema_version": 1,
